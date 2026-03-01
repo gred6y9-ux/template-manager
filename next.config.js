@@ -1,9 +1,24 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    domains: ["lh3.googleusercontent.com"],
-  },
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin", "cyrillic"] });
+
+export const metadata: Metadata = {
+  title: "Template Manager",
+  description: "Test",
 };
 
-module.exports = nextConfig;
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="uk">
+      <body className={inter.className}>
+        {children}
+      </body>
+    </html>
+  );
+}
