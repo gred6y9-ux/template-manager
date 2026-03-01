@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/layout/Sidebar";
@@ -15,10 +15,19 @@ import { motion } from "framer-motion";
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+
   const [currentView, setCurrentView] = useState<ViewType>("templates");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<CommunityUser | null>(null);
 
+  // ✅ Правильний редірект через useEffect
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  // Показуємо loader поки перевіряється auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -31,10 +40,8 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
+  // Якщо користувача нема — нічого не рендеримо (редірект уже запущений)
+  if (!user) return null;
 
   const renderContent = () => {
     switch (currentView) {
