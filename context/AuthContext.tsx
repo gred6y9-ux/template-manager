@@ -33,57 +33,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
-      
+
       if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+        const userRef = doc(db, "users", firebaseUser.uid);
+        const userDoc = await getDoc(userRef);
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUser({
             id: firebaseUser.uid,
             name: userData.name,
             email: userData.email,
-            avatar: userData.avatar,
+            avatar: userData.avatar || "",
             totalLikes: userData.totalLikes || 0,
-            createdAt: userData.createdAt?.toDate(),
+            createdAt: userData.createdAt?.toDate() || new Date(),
+          });
+        } else {
+          // 🔥 Якщо документа нема — створюємо автоматично
+          const newUserData = {
+            name: firebaseUser.displayName || "Користувач",
+            email: firebaseUser.email,
+            avatar: firebaseUser.photoURL,
+            totalLikes: 0,
+            createdAt: serverTimestamp(),
+          };
+
+          await setDoc(userRef, newUserData);
+
+          setUser({
+            id: firebaseUser.uid,
+            name: newUserData.name,
+            email: newUserData.email || "",
+            avatar: newUserData.avatar || "",
+            totalLikes: 0,
+            createdAt: new Date(),
           });
         }
       } else {
         setUser(null);
       }
-      
+
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const createUserDocument = async (firebaseUser: FirebaseUser, name: string) => {
-    const userRef = doc(db, "users", firebaseUser.uid);
-    const userData = {
-      name,
-      email: firebaseUser.email,
-      avatar: firebaseUser.photoURL,
-      totalLikes: 0,
-      createdAt: serverTimestamp(),
-    };
-    await setDoc(userRef, userData);
-  };
-
   const loginWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const registerWithEmail = async (email: string, password: string, name: string) => {
-    const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
-    await createUserDocument(firebaseUser, name);
+    const { user: firebaseUser } = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const userRef = doc(db, "users", firebaseUser.uid);
+
+    await setDoc(userRef, {
+      name,
+      email: firebaseUser.email,
+      avatar: firebaseUser.photoURL,
+      totalLikes: 0,
+      createdAt: serverTimestamp(),
+    });
   };
 
   const loginWithGoogle = async () => {
     const { user: firebaseUser } = await signInWithPopup(auth, googleProvider);
-    const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-    
+
+    const userRef = doc(db, "users", firebaseUser.uid);
+    const userDoc = await getDoc(userRef);
+
     if (!userDoc.exists()) {
-      await createUserDocument(firebaseUser, firebaseUser.displayName || "Користувач");
+      await setDoc(userRef, {
+        name: firebaseUser.displayName || "Користувач",
+        email: firebaseUser.email,
+        avatar: firebaseUser.photoURL,
+        totalLikes: 0,
+        createdAt: serverTimestamp(),
+      });
     }
   };
 
