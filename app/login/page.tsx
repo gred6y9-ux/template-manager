@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, Chrome, Loader2 } from "lucide-react";
@@ -9,12 +9,20 @@ import { motion } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail, loginWithGoogle, user } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // ✅ Автоматичний редірект після логіну
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +31,7 @@ export default function LoginPage() {
 
     try {
       await loginWithEmail(email, password);
-      router.push("/dashboard");
+      // ❌ БІЛЬШЕ НЕ ПУШИМО ТУТ
     } catch (err: any) {
       setError(getErrorMessage(err.code));
     } finally {
@@ -37,7 +45,7 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle();
-      router.push("/dashboard");
+      // ❌ БІЛЬШЕ НЕ ПУШИМО ТУТ
     } catch (err: any) {
       setError(getErrorMessage(err.code));
     } finally {
@@ -69,8 +77,12 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold gradient-text mb-2">Template Manager</h1>
-          <p className="text-text-secondary">Вхід до вашого облікового запису</p>
+          <h1 className="text-3xl font-bold gradient-text mb-2">
+            Template Manager
+          </h1>
+          <p className="text-text-secondary">
+            Вхід до вашого облікового запису
+          </p>
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-8">
@@ -121,7 +133,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-default"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -162,7 +178,10 @@ export default function LoginPage() {
 
           <p className="text-center mt-6 text-text-secondary text-sm">
             Ще не маєте облікового запису?{" "}
-            <Link href="/register" className="text-primary hover:text-primary-light transition-default">
+            <Link
+              href="/register"
+              className="text-primary hover:text-primary-light transition-default"
+            >
               Зареєструватися
             </Link>
           </p>
