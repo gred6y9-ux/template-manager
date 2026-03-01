@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, Chrome, Loader2 } from "lucide-react";
@@ -9,20 +9,13 @@ import { motion } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginWithEmail, loginWithGoogle, user } = useAuth();
+  const { loginWithEmail, loginWithGoogle } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // ✅ Автоматичний редірект після логіну
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboard");
-    }
-  }, [user, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +24,11 @@ export default function LoginPage() {
 
     try {
       await loginWithEmail(email, password);
-      // ❌ БІЛЬШЕ НЕ ПУШИМО ТУТ
+
+      // 🔥 Жорсткий редірект після логіну
+      router.replace("/dashboard");
     } catch (err: any) {
-      setError(getErrorMessage(err.code));
+      setError("Помилка входу. Спробуйте ще раз");
     } finally {
       setLoading(false);
     }
@@ -45,26 +40,13 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle();
-      // ❌ БІЛЬШЕ НЕ ПУШИМО ТУТ
+
+      // 🔥 Жорсткий редірект
+      router.replace("/dashboard");
     } catch (err: any) {
-      setError(getErrorMessage(err.code));
+      setError("Помилка входу через Google");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getErrorMessage = (code: string) => {
-    switch (code) {
-      case "auth/user-not-found":
-        return "Користувача не знайдено";
-      case "auth/wrong-password":
-        return "Невірний пароль";
-      case "auth/invalid-email":
-        return "Невірний формат email";
-      case "auth/too-many-requests":
-        return "Забагато спроб. Спробуйте пізніше";
-      default:
-        return "Помилка входу. Спробуйте ще раз";
     }
   };
 
@@ -87,13 +69,9 @@ export default function LoginPage() {
 
         <div className="bg-surface border border-border rounded-xl p-8">
           {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="bg-error/10 border border-error/30 text-error rounded-lg p-3 mb-6 text-sm"
-            >
+            <div className="bg-error/10 border border-error/30 text-error rounded-lg p-3 mb-6 text-sm">
               {error}
-            </motion.div>
+            </div>
           )}
 
           <form onSubmit={handleEmailLogin} className="space-y-5">
@@ -108,7 +86,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-3 text-text placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary transition-default"
+                  className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-3"
                   required
                 />
               </div>
@@ -125,19 +103,15 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Ваш пароль"
-                  className="w-full bg-background border border-border rounded-lg pl-10 pr-12 py-3 text-text placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary transition-default"
+                  className="w-full bg-background border border-border rounded-lg pl-10 pr-12 py-3"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-default"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
@@ -145,11 +119,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 rounded-lg transition-default btn-glow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-primary text-white py-3 rounded-lg flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="animate-spin" />
                   Вхід...
                 </>
               ) : (
@@ -158,30 +132,22 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-surface text-text-muted">або</span>
-            </div>
+          <div className="my-6 text-center text-sm text-text-muted">
+            або
           </div>
 
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full bg-surface-hover hover:bg-surface-active border border-border text-text font-medium py-3 rounded-lg transition-default flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-surface-hover border border-border py-3 rounded-lg flex items-center justify-center gap-3"
           >
-            <Chrome className="w-5 h-5 text-[#4285F4]" />
+            <Chrome className="text-[#4285F4]" />
             Увійти через Google
           </button>
 
-          <p className="text-center mt-6 text-text-secondary text-sm">
+          <p className="text-center mt-6 text-sm">
             Ще не маєте облікового запису?{" "}
-            <Link
-              href="/register"
-              className="text-primary hover:text-primary-light transition-default"
-            >
+            <Link href="/register" className="text-primary">
               Зареєструватися
             </Link>
           </p>
